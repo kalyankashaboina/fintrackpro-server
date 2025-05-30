@@ -31,8 +31,12 @@ Create a `.env` file at the root with:
 
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_email_password_or_app_password
+FRONTEND_URL=http://localhost:3000
+
 
 
 | Method | Endpoint                 | Description                  | Query Parameters                                                | Request Body                                                                                   | Response                                  |
