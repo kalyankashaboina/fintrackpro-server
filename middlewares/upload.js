@@ -15,4 +15,14 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-module.exports = upload;
+// Conditional middleware to apply multer only on multipart/form-data requests
+const conditionalUpload = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.startsWith('multipart/form-data')) {
+    upload.single('profilePic')(req, res, next);
+  } else {
+    next();
+  }
+};
+
+module.exports = { upload, conditionalUpload };

@@ -8,13 +8,13 @@ const {
   updateProfile,
 } = require("../controllers/authController");
 const { protect } = require("../middlewares/authMiddleware");
-const upload = require("../middlewares/upload");
+const { conditionalUpload } = require("../middlewares/upload");
 
-router.post("/register", registerUser);
+router.post("/register", conditionalUpload, registerUser);
 router.post("/login", loginUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 
-router.put('/update-profile', protect, upload.single('profilePic'), updateProfile);
+router.put("/update-profile", protect, conditionalUpload, updateProfile);
 
 module.exports = router;

@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const sendMail = require("../utils/nodemailer");
 const cloudinary = require("../config/cloudinary.config"); // Import Cloudinary configuration
 const streamifier = require("streamifier");
+const emailEmitter = require('../events/emailEvents');
 // Register
 exports.registerUser = async (req, res) => {
   const { name, email, password, profilePic = "" } = req.body;
@@ -24,6 +25,9 @@ exports.registerUser = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+    // Emit registration email event
+    emailEmitter.emit('sendRegistrationEmail', { email, name });
+
     res.status(201).json({
       token,
       user: {
@@ -79,11 +83,9 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendMail({
-      to: email,
-      subject: "Reset Your Password - FinTrackPro",
-      html: `<p>Hello ${user.name},</p><p>Click the link below to reset your password:</p><a href="${resetLink}">${resetLink}</a><p>This link expires in 15 minutes.</p>`,
-    });
+ // Emit forgot password email event
+    emailEmitter.emit('sendForgotPasswordEmail', { email, name: user.name, resetLink });
+
 
     res.json({ message: "Reset link sent to email" });
   } catch (err) {
