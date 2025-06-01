@@ -12,7 +12,7 @@ connectDB();
 const app = express();
 
 // Restrict CORS to your frontend only
-const allowedOrigins = ['https://fintrackpro-three.vercel.app'];
+const allowedOrigins = ['https://fintrackpro-three.vercel.app', 'http://localhost:8080' ];
 
 
 app.use(cors({
