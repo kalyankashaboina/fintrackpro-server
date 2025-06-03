@@ -82,7 +82,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `https://fintrackpro-three.vercel.app/reset-password/${resetToken}`;
  // Emit forgot password email event
     emailEmitter.emit('sendForgotPasswordEmail', { email, name: user.name, resetLink });
 

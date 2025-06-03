@@ -20,6 +20,10 @@ emailEmitter.on('sendRegistrationEmail', async ({ email, name }) => {
 
 emailEmitter.on('sendForgotPasswordEmail', async ({ email, name, resetLink }) => {
   try {
+    console.log("Sending forgot password email to:", email);
+    console.log("Reset link:", resetLink);
+    console.log("Name:", name);
+
     await sendMail({
       to: email,
       subject: 'Reset Your Password - FinTrackPro',
