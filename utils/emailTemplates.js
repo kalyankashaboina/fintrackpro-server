@@ -46,7 +46,7 @@ const registrationSuccessTemplate = (userName) => `
     </ul>
     <p>If you ever need help, our support team is just a click away.</p>
     <p style="text-align: center; margin: 30px 0;">
-      <a href="https://fintrackpro.com/login" 
+      <a href="https://fintrackpro-three.vercel.app/login" 
          style="
            background-color: #1a73e8; 
            color: #ffffff; 
