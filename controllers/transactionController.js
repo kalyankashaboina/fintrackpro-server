@@ -44,7 +44,7 @@ exports.createTransaction = async (req, res) => {
 
 // Get all transactions (with filters, pagination)
 exports.getTransactions = async (req, res) => {
-  console.log('Fetching transactions for user:', req.user);
+  // console.log('Fetching transactions for user:', req.user);
   const { page = 1, limit = 10, startDate, endDate, type } = req.query;
 
   const filters = { userId: req.user._id };

@@ -58,6 +58,8 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+    logger.info(`Login attempt for email: ${email}`);
+
     res.json({
       token,
       user: {
@@ -146,7 +148,7 @@ exports.resetPassword = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-  console.log("Request body:", req.body);
+  // console.log("Request body:", req.body);
   try {
     const userId = req.user.id;
     const { name, email, currentPassword, newPassword } = req.body;
@@ -172,7 +174,7 @@ exports.updateProfile = async (req, res) => {
       if (user.profilePic) {
         const publicId = user.profilePic.split("/").pop().split(".")[0];
         await cloudinary.uploader.destroy(`profile_pics/${publicId}`);
-        console.log("Old profile pic deleted successfully from Cloudinary.");
+        // console.log("Old profile pic deleted successfully from Cloudinary.");
       }
 
       // Upload new profile pic using stream
