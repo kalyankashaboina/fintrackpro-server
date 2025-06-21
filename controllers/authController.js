@@ -6,6 +6,8 @@ const sendMail = require("../utils/nodemailer");
 const cloudinary = require("../config/cloudinary.config"); // Import Cloudinary configuration
 const streamifier = require("streamifier");
 const emailEmitter = require('../events/emailEvents');
+const logger = require("../utils/logger");
+const FRONTEND_URL = process.env.FRONTEND_URL;
 // Register
 exports.registerUser = async (req, res) => {
   const { name, email, password, profilePic = "" } = req.body;
@@ -70,49 +72,75 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// Forgot Password
+
+
+// Log the FRONTEND_URL on init
+
 exports.forgotPassword = async (req, res) => {
+  
+logger.info(`Using FRONTEND_URL: ${FRONTEND_URL}`); 
   const { email } = req.body;
   try {
+    logger.info(`Forgot password requested for email: ${email}`);
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      logger.warn(`User not found for forgot password: ${email}`);
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
     user.resetToken = resetToken;
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `https://fintrackpro-three.vercel.app/reset-password/${resetToken}`;
- // Emit forgot password email event
-    emailEmitter.emit('sendForgotPasswordEmail', { email, name: user.name, resetLink });
+    const resetLink = `${FRONTEND_URL}/reset-password/${resetToken}`;
+    logger.info(`Generated reset link for ${email}: ${resetLink}`);
 
+    emailEmitter.emit("sendForgotPasswordEmail", {
+      email,
+      name: user.name,
+      resetLink,
+    });
 
     res.json({ message: "Reset link sent to email" });
   } catch (err) {
+    logger.error(`Error in forgotPassword for email ${email}: ${err.message}`);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
+
 // Reset Password
+
 exports.resetPassword = async (req, res) => {
+  logger.info(`Using FRONTEND_URL: ${FRONTEND_URL}`); 
   const { token } = req.params;
   const { newPassword } = req.body;
+
+  logger.info(`Password reset attempt with token: ${token}`);
+
   try {
     const user = await User.findOne({
       resetToken: token,
       resetTokenExpiry: { $gt: Date.now() },
     });
 
-    if (!user)
+    if (!user) {
+      logger.warn(`Invalid or expired token used for password reset: ${token}`);
       return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
     await user.save();
 
+    logger.info(`Password successfully reset for user ID: ${user._id} (email: ${user.email})`);
+
     res.json({ message: "Password reset successful" });
   } catch (err) {
+    logger.error(`Error during password reset with token ${token}: ${err.message}`);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
