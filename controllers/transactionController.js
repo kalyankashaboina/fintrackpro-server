@@ -94,7 +94,7 @@ exports.getTransactions = async (req, res) => {
     isCredit,
   } = req.query;
   const filters = { userId: req.user._id };
-
+  console.log("userid", req.user._id);
   if (type) filters.type = type;
   if (isCredit !== undefined) filters.isCredit = isCredit === "true";
   if (startDate || endDate) {
@@ -133,7 +133,7 @@ exports.getTransactionById = async (req, res) => {
       _id: req.params.id,
       userId: req.user._id,
     });
-
+    console.log("transaction", transaction);
     if (!transaction) {
       return res
         .status(404)

@@ -73,4 +73,19 @@ const registrationSuccessTemplate = (userName) => `
   </div>
 `;
 
-module.exports = { forgotPasswordTemplate, registrationSuccessTemplate };
+const loginNotificationTemplate = (userName) => `
+  <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;">
+    <h2 style="color: #2c3e50;">Hello ${userName},</h2>
+    <p>This is a confirmation that your <strong>FinTrackPro</strong> account was just accessed by signing in with Google.</p>
+    <p>If this was you, you can safely ignore this email. It's just a security notification to keep your account safe.</p>
+    <p>If you do not recognize this activity, please reset your password immediately and contact our support team.</p>
+    <br />
+    <p>Thanks for being with us,<br/>The FinTrackPro Team</p>
+    <hr style="border:none; border-top:1px solid #ddd; margin-top:40px;"/>
+    <p style="font-size: 12px; color: #999;">
+      FinTrackPro Inc.<br/>
+      Your trusted finance companion.
+    </p>
+  </div>
+`;
+module.exports = { forgotPasswordTemplate, registrationSuccessTemplate, loginNotificationTemplate };

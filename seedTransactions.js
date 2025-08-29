@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const Transaction = require("./models/transactionModel");
 const { mockTransactions } = require("./utils/mockTransactions");
 
-const TEST_USER_ID = "68b052bdced126dccd5fb5e7"; // your actual user ID
+const TEST_USER_ID = "68b1794c8e9176727b56b764"; 
 
 const seedTransactions = async () => {
   try {
