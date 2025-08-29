@@ -1,7 +1,28 @@
-const Transaction = require('../models/transactionModel');
-const { getCategoryEmoji } = require('../utils/categoryUtils');
+const Transaction = require("../models/transactionModel");
 
-// Create a transaction
+const validTypes = [
+  "income",
+  "expense",
+  "borrow",
+  "repay",
+  "credit",
+  "credit-repay",
+];
+
+const formatTransaction = (tx) => ({
+  id: tx._id,
+  date: tx.date,
+  category: tx.category,
+  amount: tx.amount,
+  type: tx.type,
+  paymentMode: tx.paymentMode,
+  shared: tx.shared,
+  people: tx.people,
+  userShare: tx.userShare,
+  description: tx.description || "",
+  isCredit: tx.isCredit || false,
+});
+
 exports.createTransaction = async (req, res) => {
   try {
     const {
@@ -12,43 +33,70 @@ exports.createTransaction = async (req, res) => {
       paymentMode,
       shared = false,
       people = 1,
-      description,
+      description = "",
     } = req.body;
 
-    const userShare = shared ? amount / people : amount;
+    if (!date || !category || !amount || !type || !paymentMode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    if (!validTypes.includes(type)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "`type` is not valid" });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Amount must be a valid number" });
+    }
+
+    const userShare = shared ? parsedAmount / (people || 1) : parsedAmount;
+    const isCredit = type === "credit" || type === "credit-repay";
 
     const transaction = await Transaction.create({
       userId: req.user._id,
-      date,
+      date: new Date(date),
       category,
-      amount,
+      amount: parsedAmount,
       type,
       paymentMode,
       shared,
       people,
       userShare,
       description,
+      isCredit,
     });
 
-    // Add emoji in response only
-    const withEmoji = {
-      ...transaction._doc,
-      emoji: getCategoryEmoji(transaction.category),
-    };
-
-    res.status(201).json({ message: 'Transaction created', transaction: withEmoji });
+    res.status(201).json({
+      success: true,
+      message: "Transaction created",
+      data: formatTransaction(transaction),
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// Get all transactions (with filters, pagination)
 exports.getTransactions = async (req, res) => {
-  // console.log('Fetching transactions for user:', req.user);
-  const { page = 1, limit = 10, startDate, endDate, type } = req.query;
-
+  const {
+    page = 1,
+    limit = 10,
+    startDate,
+    endDate,
+    type,
+    isCredit,
+  } = req.query;
   const filters = { userId: req.user._id };
+
   if (type) filters.type = type;
+  if (isCredit !== undefined) filters.isCredit = isCredit === "true";
   if (startDate || endDate) {
     filters.date = {};
     if (startDate) filters.date.$gte = new Date(startDate);
@@ -61,25 +109,24 @@ exports.getTransactions = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
-    const enhanced = transactions.map(tx => ({
-      ...tx._doc,
-      emoji: getCategoryEmoji(tx.category),
-    }));
-
+    const formatted = transactions.map(formatTransaction);
     const total = await Transaction.countDocuments(filters);
 
     res.json({
-      transactions: enhanced,
+      success: true,
+      message: "Transactions fetched successfully",
+      data: formatted,
       page: parseInt(page),
       totalPages: Math.ceil(total / limit),
       totalTransactions: total,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// Get single transaction by ID
 exports.getTransactionById = async (req, res) => {
   try {
     const transaction = await Transaction.findOne({
@@ -88,21 +135,19 @@ exports.getTransactionById = async (req, res) => {
     });
 
     if (!transaction) {
-      return res.status(404).json({ message: 'Transaction not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
     }
 
-    const withEmoji = {
-      ...transaction._doc,
-      emoji: getCategoryEmoji(transaction.category),
-    };
-
-    res.json(withEmoji);
+    res.json({ success: true, data: formatTransaction(transaction) });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// Update transaction
 exports.updateTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findOne({
@@ -111,47 +156,61 @@ exports.updateTransaction = async (req, res) => {
     });
 
     if (!transaction) {
-      return res.status(404).json({ message: 'Transaction not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
     }
 
-    const {
-      date,
-      category,
-      amount,
-      type,
-      paymentMode,
-      shared,
-      people,
-      description,
-    } = req.body;
+    const allowedFields = [
+      "date",
+      "category",
+      "amount",
+      "type",
+      "paymentMode",
+      "shared",
+      "people",
+      "description",
+    ];
+    Object.keys(req.body).forEach((key) => {
+      if (allowedFields.includes(key)) transaction[key] = req.body[key];
+    });
 
-    if (date !== undefined) transaction.date = date;
-    if (category !== undefined) transaction.category = category;
-    if (amount !== undefined) transaction.amount = amount;
-    if (type !== undefined) transaction.type = type;
-    if (paymentMode !== undefined) transaction.paymentMode = paymentMode;
-    if (shared !== undefined) transaction.shared = shared;
-    if (people !== undefined) transaction.people = people;
-    if (description !== undefined) transaction.description = description;
+    if (req.body.type && !validTypes.includes(req.body.type)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "`type` is not valid" });
+    }
+
+    if (req.body.amount) {
+      const parsedAmount = parseFloat(req.body.amount);
+      if (isNaN(parsedAmount)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Amount must be a valid number" });
+      }
+      transaction.amount = parsedAmount;
+    }
 
     transaction.userShare = transaction.shared
       ? transaction.amount / (transaction.people || 1)
       : transaction.amount;
 
+    transaction.isCredit =
+      transaction.type === "credit" || transaction.type === "credit-repay";
+
     await transaction.save();
-
-    const withEmoji = {
-      ...transaction._doc,
-      emoji: getCategoryEmoji(transaction.category),
-    };
-
-    res.json({ message: 'Transaction updated', transaction: withEmoji });
+    res.json({
+      success: true,
+      message: "Transaction updated",
+      data: formatTransaction(transaction),
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
-// Delete transaction
 exports.deleteTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndDelete({
@@ -160,11 +219,15 @@ exports.deleteTransaction = async (req, res) => {
     });
 
     if (!transaction) {
-      return res.status(404).json({ message: 'Transaction not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
     }
 
-    res.json({ message: 'Transaction deleted' });
+    res.json({ success: true, message: "Transaction deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
