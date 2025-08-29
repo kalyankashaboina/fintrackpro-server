@@ -41,13 +41,11 @@ exports.createTransaction = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Missing required fields" });
     }
-
     if (!validTypes.includes(type)) {
       return res
         .status(400)
         .json({ success: false, message: "`type` is not valid" });
     }
-
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount)) {
       return res
@@ -84,7 +82,11 @@ exports.createTransaction = async (req, res) => {
   }
 };
 
+// ===================================================================
+// THIS IS THE UPDATED FUNCTION
+// ===================================================================
 exports.getTransactions = async (req, res) => {
+  // Destructure all possible query parameters
   const {
     page = 1,
     limit = 10,
@@ -92,11 +94,18 @@ exports.getTransactions = async (req, res) => {
     endDate,
     type,
     isCredit,
+    paymentMode, // <-- ADDED: Read paymentMode from query
   } = req.query;
+
   const filters = { userId: req.user._id };
-  console.log("userid", req.user._id);
+
+  // Apply filters if they exist
   if (type) filters.type = type;
   if (isCredit !== undefined) filters.isCredit = isCredit === "true";
+
+  // ADDED: Apply paymentMode filter if provided
+  if (paymentMode) filters.paymentMode = paymentMode;
+
   if (startDate || endDate) {
     filters.date = {};
     if (startDate) filters.date.$gte = new Date(startDate);
@@ -133,13 +142,11 @@ exports.getTransactionById = async (req, res) => {
       _id: req.params.id,
       userId: req.user._id,
     });
-    console.log("transaction", transaction);
     if (!transaction) {
       return res
         .status(404)
         .json({ success: false, message: "Transaction not found" });
     }
-
     res.json({ success: true, data: formatTransaction(transaction) });
   } catch (error) {
     res
@@ -154,7 +161,6 @@ exports.updateTransaction = async (req, res) => {
       _id: req.params.id,
       userId: req.user._id,
     });
-
     if (!transaction) {
       return res
         .status(404)
@@ -180,7 +186,6 @@ exports.updateTransaction = async (req, res) => {
         .status(400)
         .json({ success: false, message: "`type` is not valid" });
     }
-
     if (req.body.amount) {
       const parsedAmount = parseFloat(req.body.amount);
       if (isNaN(parsedAmount)) {
@@ -194,7 +199,6 @@ exports.updateTransaction = async (req, res) => {
     transaction.userShare = transaction.shared
       ? transaction.amount / (transaction.people || 1)
       : transaction.amount;
-
     transaction.isCredit =
       transaction.type === "credit" || transaction.type === "credit-repay";
 
@@ -217,13 +221,11 @@ exports.deleteTransaction = async (req, res) => {
       _id: req.params.id,
       userId: req.user._id,
     });
-
     if (!transaction) {
       return res
         .status(404)
         .json({ success: false, message: "Transaction not found" });
     }
-
     res.json({ success: true, message: "Transaction deleted successfully" });
   } catch (error) {
     res
