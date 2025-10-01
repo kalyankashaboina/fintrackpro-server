@@ -6,20 +6,14 @@ const {
   getTransactionById,
   updateTransaction,
   deleteTransaction,
-  createBulkTransactions
+  createBulkTransactions,
 } = require('../controllers/transactionController');
 const { protect } = require('../middlewares/authMiddleware');
 
 router.use(protect);
 
-router.route('/')
-  .post(createTransaction)
-  .get(getTransactions);
-router.route('/bulk')
-  .post(createBulkTransactions);
-router.route('/:id')
-  .get(getTransactionById)
-  .put(updateTransaction)
-  .delete(deleteTransaction);
+router.route('/').post(createTransaction).get(getTransactions);
+router.route('/bulk').post(createBulkTransactions);
+router.route('/:id').get(getTransactionById).put(updateTransaction).delete(deleteTransaction);
 
 module.exports = router;

@@ -25,7 +25,7 @@ const logger = winston.createLogger({
 
     // Add MongoDB transport
     new winston.transports.MongoDB({
-      level: 'info', 
+      level: 'info',
       db: MONGO_URI,
       collection: 'fintrackpro-logs',
       format: winston.format.metadata(),

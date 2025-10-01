@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky && husky install"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +33,16 @@
     "winston-mongodb": "^7.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@eslint/js": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^8.0.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
+  },
+  "lint-staged": {
+    "*.{js,,ts,}": [
+      "prettier --write ."
+    ]
   }
 }

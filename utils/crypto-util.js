@@ -8,8 +8,8 @@ if (!process.env.ENCRYPTION_KEY) {
 }
 
 const ALGORITHM = 'aes-256-cbc';
-const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex'); 
-const IV_LENGTH = 16; 
+const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+const IV_LENGTH = 16;
 
 function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -35,8 +35,8 @@ function decrypt(text) {
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
   } catch (error) {
-    console.error("Decryption failed:", error);
-    return null; 
+    console.error('Decryption failed:', error);
+    return null;
   }
 }
 
