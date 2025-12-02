@@ -153,15 +153,36 @@ exports.updateTransaction = async (req, res) => {
       'people',
       'description',
     ];
+
+    // Validate and update allowed fields
     Object.keys(req.body).forEach((key) => {
-      if (allowedFields.includes(key)) transaction[key] = req.body[key];
+      if (allowedFields.includes(key)) {
+        // Validate type field if being updated
+        if (key === 'type' && !validTypes.includes(req.body[key])) {
+          throw new Error(
+            `Invalid type '${req.body[key]}'. Must be one of: ${validTypes.join(', ')}`
+          );
+        }
+        transaction[key] = req.body[key];
+      }
     });
 
+    // Validate and update amount if provided
     if (req.body.amount !== undefined) {
       const parsedAmount = parseFloat(req.body.amount);
       if (isNaN(parsedAmount))
         return res.status(400).json({ success: false, message: 'Amount must be a valid number' });
+      if (parsedAmount <= 0)
+        return res.status(400).json({ success: false, message: 'Amount must be greater than 0' });
       currentAmount = parsedAmount; // Update with the new amount from the request
+    }
+
+    // Validate people field if shared is true
+    if (transaction.shared && (!transaction.people || transaction.people < 1)) {
+      return res.status(400).json({
+        success: false,
+        message: 'People count must be at least 1 when transaction is shared',
+      });
     }
 
     // Recalculate and RE-ENCRYPT the sensitive fields before saving
