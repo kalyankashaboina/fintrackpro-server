@@ -1,0 +1,227 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # ============================================================================
+  # JOB 1: LINT & CODE QUALITY
+  # ============================================================================
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (if configured)
+        run: npm run lint || echo "No lint script found"
+        continue-on-error: true
+
+      - name: Check code formatting
+        run: npx prettier --check "**/*.{js,json,md}" || echo "Prettier not configured"
+        continue-on-error: true
+
+  # ============================================================================
+  # JOB 2: SECURITY AUDIT
+  # ============================================================================
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for vulnerabilities
+        run: |
+          npm audit --json > audit-results.json || true
+          echo "Security audit completed. Check audit-results.json for details."
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit
+          path: audit-results.json
+          retention-days: 30
+
+  # ============================================================================
+  # JOB 3: TEST (Placeholder - add tests in next release)
+  # ============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test || echo "No tests configured yet"
+        continue-on-error: true
+
+  # ============================================================================
+  # JOB 4: BUILD CHECK
+  # ============================================================================
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify server starts
+        run: |
+          timeout 10s node server.js || code=$?
+          if [ $code -eq 124 ]; then
+            echo "✅ Server started successfully"
+            exit 0
+          else
+            echo "❌ Server failed to start"
+            exit 1
+          fi
+        env:
+          MONGODB_URI: mongodb://localhost:27017/test
+          JWT_SECRET: test_secret
+          REFRESH_TOKEN_SECRET: test_refresh_secret
+          ENCRYPTION_KEY: test_encryption_key_32_chars!!
+          PORT: 5000
+
+  # ============================================================================
+  # JOB 5: DEPLOY TO RENDER (on main branch only)
+  # ============================================================================
+  deploy-render:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Deployment triggered on Render"
+          echo "Check status at: https://dashboard.render.com"
+          sleep 10
+
+  # ============================================================================
+  # JOB 6: BUILD DOCKER IMAGE (Optional - for self-hosting)
+  # ============================================================================
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/fintrackpro-backend
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================================
+  # JOB 7: NOTIFY ON SUCCESS
+  # ============================================================================
+  notify-success:
+    name: Notify on Success
+    runs-on: ubuntu-latest
+    needs: [deploy-render, docker-build]
+    if: success()
+    
+    steps:
+      - name: Success notification
+        run: |
+          echo "✅ Backend deployed successfully!"
+          # Add Slack/Discord/Email notification here if needed
+
+  # ============================================================================
+  # JOB 8: NOTIFY ON FAILURE
+  # ============================================================================
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [lint, security, build, deploy-render]
+    if: failure()
+    
+    steps:
+      - name: Failure notification
+        run: |
+          echo "⚠️ Pipeline failed! Check the workflow logs for details."
+          # Add Slack/Discord/Email notification here if needed

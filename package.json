@@ -1,0 +1,48 @@
+{
+  "name": "fintrackpro-backend",
+  "version": "1.0.0",
+  "description": "This is the backend for FinTrackPro, a financial tracking application.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky && husky install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.1",
+    "multer": "^2.0.0",
+    "nodemailer": "^8.0.7",
+    "rimraf": "^6.0.1",
+    "sharp": "^0.34.2",
+    "streamifier": "^0.1.1",
+    "winston": "^3.17.0",
+    "winston-mongodb": "^7.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^8.0.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
+  },
+  "lint-staged": {
+    "*.{js,,ts,}": [
+      "prettier --write ."
+    ]
+  }
+}
