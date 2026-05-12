@@ -6,8 +6,10 @@ import { asyncHandler } from '../utils/async-handler.util.js';
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from '../utils/jwt.util.js';
 import userRepository from '../repositories/user.repository.js';
 import uploadService from '../services/upload.service.js';
+import { logger } from '../config/logger.js';
 
 export const register = asyncHandler(async (req: IAuthRequest, res: Response) => {
+  logger.info({ body: req.body }, 'User registration request');
   const { user, tokens } = await authService.register(req.body);
   setRefreshTokenCookie(res, tokens.refreshToken);
   successResponse(res, { user, accessToken: tokens.accessToken }, 'Registration successful', 201);

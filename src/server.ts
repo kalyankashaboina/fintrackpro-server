@@ -3,7 +3,6 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
-import mongoSanitize from 'express-mongo-sanitize';
 
 import { env } from './config/env.js';
 import logger from './config/logger.js';
@@ -62,19 +61,7 @@ app.use(
 );
 
 /* ---------------- API ROUTES (PROTECTED STACK) ---------------- */
-app.use(
-  '/api/v1',
-
-  // IMPORTANT FIX:
-  // express-mongo-sanitize should NOT touch query for swagger routes
-  mongoSanitize({
-    replaceWith: '_',
-    allowDots: true,
-  }),
-
-  apiLimiter,
-  v1Routes,
-);
+app.use('/api/v1', apiLimiter, v1Routes);
 
 /* ---------------- 404 HANDLER ---------------- */
 app.use(notFoundHandler);

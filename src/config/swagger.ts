@@ -304,7 +304,18 @@ const options: swaggerJsdoc.Options = {
             },
           },
           responses: {
-            '201': { description: 'Created' },
+            '201': {
+              description: 'Transaction created',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+            '400': { description: 'Bad request' },
+            '401': { description: 'Unauthorized' },
           },
         },
 
@@ -313,14 +324,180 @@ const options: swaggerJsdoc.Options = {
           summary: 'List transactions',
           security: [{ bearerAuth: [] }],
           responses: {
-            '200': { description: 'OK' },
+            '200': {
+              description: 'Transactions retrieved',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+            '401': { description: 'Unauthorized' },
+          },
+        },
+      },
+
+      '/api/v1/transactions/{id}': {
+        get: {
+          tags: ['Transactions'],
+          summary: 'Get transaction by ID',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Transaction found',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+            '404': { description: 'Not found' },
+          },
+        },
+
+        put: {
+          tags: ['Transactions'],
+          summary: 'Update transaction',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/TransactionCreate',
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'Transaction updated',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+            '404': { description: 'Not found' },
+          },
+        },
+
+        delete: {
+          tags: ['Transactions'],
+          summary: 'Delete transaction',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Transaction deleted',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+            '404': { description: 'Not found' },
+          },
+        },
+      },
+
+      '/api/v1/auth/logout': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Logout user',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Logout success',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      '/api/v1/auth/me': {
+        get: {
+          tags: ['Auth'],
+          summary: 'Get current user',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'User profile',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      '/api/v1/auth/refresh': {
+        post: {
+          tags: ['Auth'],
+          summary: 'Refresh access token',
+          security: [],
+          responses: {
+            '200': {
+              description: 'Token refreshed',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ApiResponse',
+                  },
+                },
+              },
+            },
           },
         },
       },
     },
   },
 
-  apis: [],
+  apis: [
+    './src/routes/**/*.ts',
+    './src/controllers/**/*.ts',
+  ],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

@@ -1,5 +1,4 @@
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize';
 import { Express } from 'express';
 
 export function setupSecurityMiddleware(app: Express): void {
@@ -23,15 +22,10 @@ export function setupSecurityMiddleware(app: Express): void {
     })
   );
 
-  // Prevent NoSQL injection
-  app.use(
-    mongoSanitize({
-      replaceWith: '_',
-      onSanitize: ({ req, key }) => {
-        console.warn(`Sanitized request: ${req.path}, key: ${key}`);
-      },
-    })
-  );
+  // Note: NoSQL injection prevention through:
+  // 1. Input validation with Zod validators
+  // 2. Parameterized queries with Mongoose
+  // 3. Request sanitization in individual routes/controllers
 
   // Note: xss-clean is deprecated and no longer recommended
   // XSS protection is now handled by:
